@@ -1,0 +1,7 @@
+/.venv
+/generate_ics.py
+/salesman.ics
+/__pycache__
+/.devcontainer
+/distance.py.bak
+/.mapbox_cache.json
