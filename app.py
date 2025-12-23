@@ -251,6 +251,8 @@ def find_dispos():
         annee=st.session_state["year"],
         duree_rdv=st.session_state["duration"],
     )
+    if len(st.session_state.get("dispos", [])) == 0:
+        st.info("Pas de dispos cette semaine")
 
 
 def run_git_pull():
