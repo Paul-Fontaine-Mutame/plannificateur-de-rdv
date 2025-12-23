@@ -141,7 +141,7 @@ class Calendrier:
 
     def charger_ics(
         self,
-        url: str = "https://mail.cimut.net/owa/calendar/3acaf347a64a40318c3198c96b70b5c7@mutame-plus.fr/a0eaf61da94a4316a12887f4a49d011912804625363238858578/calendar.ics",
+        url: str,
     ):
         response = requests.get(url)
         response.raise_for_status()
