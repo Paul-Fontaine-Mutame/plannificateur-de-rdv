@@ -1,5 +1,6 @@
 import json
-from datetime import date, datetime, time, timedelta
+import subprocess
+from datetime import date, datetime, timedelta
 from pathlib import Path
 
 import streamlit as st
@@ -8,7 +9,6 @@ from calendrier import Calendrier, Lieu
 from mapbox import geocode
 from mapbox import suggestions as mapbox_suggestions
 from utils import intervals_overlap, to_hours_and_minutes, to_seconds
-import subprocess
 
 
 # ---------- INIT SESSION STATE ----------
@@ -253,8 +253,30 @@ def find_dispos():
     )
 
 
+def run_git_pull():
+    """Return (exit_code, combined_output)."""
+    cmd = ["git", "pull"]
+    p = subprocess.run(
+        cmd,
+        cwd=Path(__file__).parent,
+        capture_output=True,
+        text=True,
+    )
+    output = (
+        (p.stdout or "") + ("\n" if p.stdout and p.stderr else "") + (p.stderr or "")
+    )
+    return p.returncode, output.strip()
+
+
 def git_pull():
-    subprocess.run(["git", "pull"], cwd=".")
+    with st.sidebar:
+        with st.spinner("Running git pull..."):
+            exit_code, output = run_git_pull()
+            if exit_code == 0:
+                st.success("Mise à jour réussie.")
+            else:
+                st.error("Erreur lors de la mise à jour :")
+                st.code(output or "(no output)", language="bash")
 
 
 # --- GLOBAL CSS FOR HEADER FIXES ---
