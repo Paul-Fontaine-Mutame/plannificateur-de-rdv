@@ -871,14 +871,14 @@ def sidebar():
             st.markdown("</div>", unsafe_allow_html=True)
 
         st.text_input(
-            "Début de journéee",
+            "Début de journée",
             placeholder="8h",
             key="debut_journee",
             on_change=set_debut_journee,
         )
 
         st.text_input(
-            "Fin de journéee",
+            "Fin de journée",
             placeholder="18h",
             key="fin_journee",
             on_change=set_fin_journee,
