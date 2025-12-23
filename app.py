@@ -711,18 +711,24 @@ def calendar_body():
             meal_before_trajet = False
             if dispo.temps_repas > 0:
                 # will the meal time overlap more the 12h to 14h range before or after the trajet ?
+                debut_heures_repas = dispo.debut.date() + timedelta(
+                    seconds=cal.heures_repas[0]
+                )
+                fin_heures_repas = dispo.debut.date() + timedelta(
+                    seconds=cal.heures_repas[1]
+                )
                 overlap_before = intervals_overlap(
                     dispo.debut
                     - timedelta(seconds=dispo.temps_trajet_aller + dispo.temps_repas),
                     dispo.debut - timedelta(seconds=dispo.temps_trajet_aller),
-                    datetime.combine(dispo.debut.date(), time(12, 0)),
-                    datetime.combine(dispo.debut.date(), time(14, 0)),
+                    debut_heures_repas,
+                    fin_heures_repas,
                 )
                 overlap_after = intervals_overlap(
                     dispo.debut - timedelta(seconds=dispo.temps_repas),
                     dispo.debut,
-                    datetime.combine(dispo.debut.date(), time(12, 0)),
-                    datetime.combine(dispo.debut.date(), time(14, 0)),
+                    debut_heures_repas,
+                    fin_heures_repas,
                 )
                 meal_before_trajet = overlap_before > overlap_after
             if meal_before_trajet:
