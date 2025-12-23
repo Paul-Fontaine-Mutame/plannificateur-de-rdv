@@ -163,16 +163,20 @@ def driving_time_between(lieu1, lieu2, heure_depart=None, heure_arrivee=None):
             "access_token": API_KEY,
         }
 
-    response = requests.get(url, params=params)
-    response.raise_for_status()
-    data = response.json()
+    try:
+        response = requests.get(url, params=params)
+        response.raise_for_status()
+        data = response.json()
 
-    summary = data["routes"][0]
-    duration = summary["duration"]  # in seconds
-    distance = summary["distance"]  # in meters
+        summary = data["routes"][0]
+        duration = summary["duration"]  # in seconds
+        distance = summary["distance"]  # in meters
 
-    _set_cache(key, [duration, distance])
-    return duration, distance
+        _set_cache(key, [duration, distance])
+        return duration, distance
+    except Exception as e:
+        print(f"Error while fetching driving time between {lieu1} and {lieu2} :\n {e}")
+        return 0, 0
 
 
 def map_with_places(lieu_list):

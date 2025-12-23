@@ -31,6 +31,13 @@ class Lieu:
         lat: float | None = None,
         mapbox_id: str | None = None,
     ):
+        if nom is not None:
+            if "teams" in nom.lower():
+                print(
+                    f"Lieu '{nom}' détecté, remplacé par lieu par défaut (siège St Lô)."
+                )
+                nom = None
+
         if nom is None:
             # par défaut
             self.lon = -1.0842812946932405
