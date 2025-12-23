@@ -823,14 +823,14 @@ def calendar_body():
 
 def sidebar():
     with st.sidebar:
-        st.button("mettre à jour", key="maj", on_click=git_pull)
+        st.button("Mettre à jour", key="maj", on_click=git_pull)
 
         st.markdown("### Paramètres")
 
         c1, c2, c3 = st.columns([1, 3, 1])
         with c1:
             st.text_input(
-                "conseiller",
+                "Conseiller",
                 key="conseiller",
                 on_change=update_calendar,
                 args=(False,),
@@ -849,21 +849,21 @@ def sidebar():
             st.markdown("</div>", unsafe_allow_html=True)
 
         st.text_input(
-            "début de journéee",
+            "Début de journéee",
             placeholder="8h",
             key="debut_journee",
             on_change=set_debut_journee,
         )
 
         st.text_input(
-            "fin de journéee",
+            "Fin de journéee",
             placeholder="18h",
             key="fin_journee",
             on_change=set_fin_journee,
         )
 
         st.text_input(
-            "temps repas",
+            "Temps repas",
             placeholder="1h",
             key="temps_repas",
             on_change=set_temps_repas,
