@@ -8,6 +8,7 @@ from calendrier import Calendrier, Lieu
 from mapbox import geocode
 from mapbox import suggestions as mapbox_suggestions
 from utils import intervals_overlap, to_hours_and_minutes, to_seconds
+import subprocess
 
 
 # ---------- INIT SESSION STATE ----------
@@ -248,6 +249,10 @@ def find_dispos():
         annee=st.session_state["year"],
         duree_rdv=st.session_state["duration"],
     )
+
+
+def git_pull():
+    subprocess.run(["git", "pull"], cwd=".")
 
 
 # --- GLOBAL CSS FOR HEADER FIXES ---
@@ -812,6 +817,8 @@ def calendar_body():
 
 def sidebar():
     with st.sidebar:
+        st.button("mettre à jour", key="maj", on_click=git_pull)
+
         st.markdown("### Paramètres")
 
         c1, c2, c3 = st.columns([1, 3, 1])
