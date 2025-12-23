@@ -16,14 +16,15 @@ def init_state():
     iso_year, iso_week, _ = today.isocalendar()
 
     st.session_state.setdefault("year", iso_year)
-    st.session_state.setdefault("week", 50)  # TODO: restore to iso_week
+    st.session_state.setdefault("week", iso_week)  # TODO : restore iso
     st.session_state.setdefault("address_query", "")
     st.session_state.setdefault("address_options", [])
     st.session_state.setdefault("selected_mapbox_id", None)
     st.session_state.setdefault("duration", "1h30")
 
     st.session_state.setdefault("conseiller", "Théo")
-    update_calendar(False)
+    if st.session_state.get("calendrier", None) is None:
+        update_calendar(False)
     st.session_state.setdefault("debut_journee", "8h")
     st.session_state.setdefault("fin_journee", "18h")
     st.session_state.setdefault("temps_repas", "1h")
@@ -135,13 +136,12 @@ def update_calendar(triggered_by_url_change: bool):
                 st.error(f"Erreur lors du chargement du fichier de mapping : {e}")
 
     with st.spinner("Chargement du calendrier…"):
-        cal = get_calendrier()
-        if cal is None:
-            cal = Calendrier()
+        cal = Calendrier()
         cal.rendez_vous = []
         try:
             cal.charger_ics(st.session_state["url_calendrier"])
             st.session_state["dispos"] = []
+            st.session_state["calendrier"] = cal
         except Exception as e:
             st.error(f"Impossible de charger le calendrier ICS : {e}")
             st.session_state["calendrier"] = None
@@ -580,7 +580,7 @@ def header():
 
             # Duration
             with duration_col:
-                st.text_input("Durée du rdv", key="duration", on_change=find_dispos)
+                st.text_input("Durée du rdv", key="duration")
 
                 # Trouver dispos button
                 st.button("Trouver dispos", key="find_dispos", on_click=find_dispos)
