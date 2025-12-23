@@ -17,7 +17,9 @@ def init_state():
     iso_year, iso_week, _ = today.isocalendar()
 
     st.session_state.setdefault("year", iso_year)
-    st.session_state.setdefault("week", iso_week)  # TODO : restore iso
+    st.session_state.setdefault("week", iso_week)
+    st.session_state.setdefault("year_input", iso_year)
+    st.session_state.setdefault("week_input", iso_week)
     st.session_state.setdefault("address_query", "")
     st.session_state.setdefault("address_options", [])
     st.session_state.setdefault("selected_mapbox_id", None)
@@ -514,7 +516,6 @@ def header():
                     min_value=2000,
                     max_value=2100,
                     key="year_input",
-                    value=st.session_state["year"],
                     on_change=sync_year_week,
                 )
 
@@ -525,7 +526,6 @@ def header():
                     min_value=1,
                     max_value=53,
                     key="week_input",
-                    value=st.session_state["week"],
                     on_change=sync_year_week,
                 )
             # Next week button
