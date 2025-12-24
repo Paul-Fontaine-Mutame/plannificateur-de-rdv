@@ -4,6 +4,12 @@ import time
 from pathlib import Path
 
 import requests
+from requests.adapters import HTTPAdapter
+
+_SESSION = requests.Session()
+_ADAPTER = HTTPAdapter(pool_connections=50, pool_maxsize=50, max_retries=2)
+_SESSION.mount("https://", _ADAPTER)
+_SESSION.mount("http://", _ADAPTER)
 
 API_KEY = "pk.eyJ1IjoicGF1bG11dGFtZSIsImEiOiJjbWluYTJhOHcwNGRrM2VzYThkMXo1aTdhIn0.A1NwGkKqnI8GuuEos_bkVg"
 
@@ -89,7 +95,7 @@ def suggestions(adress, limit=3):
         "access_token": API_KEY,
         "session_token": "[GENERATED-UUID]",
     }
-    response = requests.get(url, params=params)
+    response = _SESSION.get(url, params=params)
     response.raise_for_status()
     data = response.json()
 
@@ -119,7 +125,7 @@ def geocode(mapbox_id):
         "session_token": "[GENERATED-UUID]",
         "access_token": API_KEY,
     }
-    response = requests.get(url, params=params)
+    response = _SESSION.get(url, params=params)
     response.raise_for_status()
     data = response.json()
 
@@ -164,7 +170,7 @@ def driving_time_between(lieu1, lieu2, heure_depart=None, heure_arrivee=None):
         }
 
     try:
-        response = requests.get(url, params=params)
+        response = _SESSION.get(url, params=params)
         response.raise_for_status()
         data = response.json()
 

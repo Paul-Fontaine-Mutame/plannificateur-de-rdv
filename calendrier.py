@@ -1,4 +1,5 @@
 import locale
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta
 from itertools import pairwise
 
@@ -7,6 +8,8 @@ from ics import Calendar
 
 from mapbox import driving_time_between, geocode, suggestions
 from utils import intervals_overlap, to_seconds
+
+_EXEC = ThreadPoolExecutor(max_workers=12)
 
 
 def set_french_time_locale():
@@ -176,67 +179,87 @@ class Calendrier:
         dispos = []
         debut_semaine = datetime.strptime(f"{annee}-W{semaine - 1}-1", "%Y-W%W-%w")
 
+        tasks = {}  # key -> future
+        meta = []  # list of (jour, rdv_prec, rdv_suiv) so we can compute later
+
         for jour in range(5):
             date_jour = debut_semaine + timedelta(days=jour)
             rdvs_jour = self.rdvs_de_la_journee(date_jour)
 
-            for rdv_prec, rdv_suiv in pairwise(rdvs_jour):
-                creu_s = int((rdv_suiv.debut - rdv_prec.fin).total_seconds())
+            for idx, (rdv_prec, rdv_suiv) in enumerate(pairwise(rdvs_jour)):
+                meta.append((jour, date_jour, rdv_prec, rdv_suiv))
 
-                temps_trajet_aller_s, _ = driving_time_between(
+                k1 = ("aller", jour, idx)
+                k2 = ("retour", jour, idx)
+
+                tasks[k1] = _EXEC.submit(
+                    driving_time_between,
                     rdv_prec.lieu,
                     lieu,
-                    heure_depart=rdv_prec.fin + timedelta(minutes=5),
+                    rdv_prec.fin + timedelta(minutes=5),
+                    None,
                 )
-                temps_trajet_retour_s, _ = driving_time_between(
+                tasks[k2] = _EXEC.submit(
+                    driving_time_between,
                     lieu,
                     rdv_suiv.lieu,
-                    heure_arrivee=rdv_suiv.debut - timedelta(minutes=5),
+                    None,
+                    rdv_suiv.debut - timedelta(minutes=5),
                 )
-                # 10% en plus sur les temps de trajet
-                temps_trajet_aller_s = temps_trajet_aller_s * 1.10
-                temps_trajet_retour_s = temps_trajet_retour_s * 1.10
+        results = {k: fut.result() for k, fut in tasks.items()}
 
-                if intervals_overlap(
-                    rdv_prec.debut,
-                    rdv_prec.debut
-                    + timedelta(seconds=temps_trajet_aller_s + duree_rdv),
-                    date_jour + timedelta(seconds=self.heures_repas[0]),
-                    date_jour + timedelta(seconds=self.heures_repas[1]),
-                ) or intervals_overlap(
-                    rdv_suiv.debut
-                    - timedelta(seconds=temps_trajet_retour_s + duree_rdv),
-                    rdv_suiv.debut,
-                    date_jour + timedelta(seconds=self.heures_repas[0]),
-                    date_jour + timedelta(seconds=self.heures_repas[1]),
-                ):
-                    temps_repas_s = self.temps_repas
-                else:
-                    temps_repas_s = 0
+        for idx, (jour, date_jour, rdv_prec, rdv_suiv) in enumerate(meta):
+            creu_s = int((rdv_suiv.debut - rdv_prec.fin).total_seconds())
 
-                temps_total_s = (
-                    duree_rdv
-                    + temps_trajet_aller_s
-                    + temps_trajet_retour_s
-                    + temps_repas_s
-                )
-                if creu_s < temps_total_s + self.marge:
-                    continue
+            temps_trajet_aller_s, _ = driving_time_between(
+                rdv_prec.lieu,
+                lieu,
+                heure_depart=rdv_prec.fin + timedelta(minutes=5),
+            )
+            temps_trajet_retour_s, _ = driving_time_between(
+                lieu,
+                rdv_suiv.lieu,
+                heure_arrivee=rdv_suiv.debut - timedelta(minutes=5),
+            )
+            # 10% en plus sur les temps de trajet
+            temps_trajet_aller_s = temps_trajet_aller_s * 1.10
+            temps_trajet_retour_s = temps_trajet_retour_s * 1.10
 
-                debut = (
-                    rdv_prec.fin
-                    + timedelta(seconds=temps_trajet_aller_s)
-                    + timedelta(seconds=temps_repas_s)
-                )
-                fin = rdv_suiv.debut - timedelta(seconds=temps_trajet_retour_s)
-                dispo = Dispo(
-                    debut,
-                    fin,
-                    temps_trajet_aller_s,
-                    temps_trajet_retour_s,
-                    temps_repas_s,
-                )
-                dispos.append(dispo)
+            if intervals_overlap(
+                rdv_prec.debut,
+                rdv_prec.debut + timedelta(seconds=temps_trajet_aller_s + duree_rdv),
+                date_jour + timedelta(seconds=self.heures_repas[0]),
+                date_jour + timedelta(seconds=self.heures_repas[1]),
+            ) or intervals_overlap(
+                rdv_suiv.debut - timedelta(seconds=temps_trajet_retour_s + duree_rdv),
+                rdv_suiv.debut,
+                date_jour + timedelta(seconds=self.heures_repas[0]),
+                date_jour + timedelta(seconds=self.heures_repas[1]),
+            ):
+                temps_repas_s = self.temps_repas
+            else:
+                temps_repas_s = 0
+
+            temps_total_s = (
+                duree_rdv + temps_trajet_aller_s + temps_trajet_retour_s + temps_repas_s
+            )
+            if creu_s < temps_total_s + self.marge:
+                continue
+
+            debut = (
+                rdv_prec.fin
+                + timedelta(seconds=temps_trajet_aller_s)
+                + timedelta(seconds=temps_repas_s)
+            )
+            fin = rdv_suiv.debut - timedelta(seconds=temps_trajet_retour_s)
+            dispo = Dispo(
+                debut,
+                fin,
+                temps_trajet_aller_s,
+                temps_trajet_retour_s,
+                temps_repas_s,
+            )
+            dispos.append(dispo)
 
         dispos.sort()  # Tri par temps de trajet rajouté
         return dispos
