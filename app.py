@@ -241,6 +241,9 @@ def save_url():
 
 
 def find_dispos():
+    if not st.session_state.get("selected_mapbox_id"):
+        st.warning("Sélectionnez une adresse.")
+        return
     lieu = Lieu(
         nom=st.session_state["selected_address_name"],
         mapbox_id=st.session_state["selected_mapbox_id"],
@@ -735,12 +738,9 @@ def calendar_body():
             meal_before_trajet = False
             if dispo.temps_repas > 0:
                 # will the meal time overlap more the 12h to 14h range before or after the trajet ?
-                debut_heures_repas = dispo.debut.date() + timedelta(
-                    seconds=cal.heures_repas[0]
-                )
-                fin_heures_repas = dispo.debut.date() + timedelta(
-                    seconds=cal.heures_repas[1]
-                )
+                base = dispo.debut.replace(hour=0, minute=0, second=0, microsecond=0)
+                debut_heures_repas = base + timedelta(seconds=cal.heures_repas[0])
+                fin_heures_repas = base + timedelta(seconds=cal.heures_repas[1])
                 overlap_before = intervals_overlap(
                     dispo.debut
                     - timedelta(seconds=dispo.temps_trajet_aller + dispo.temps_repas),
