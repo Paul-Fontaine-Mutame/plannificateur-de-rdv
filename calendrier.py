@@ -211,16 +211,8 @@ class Calendrier:
         for idx, (jour, date_jour, rdv_prec, rdv_suiv) in enumerate(meta):
             creu_s = int((rdv_suiv.debut - rdv_prec.fin).total_seconds())
 
-            temps_trajet_aller_s, _ = driving_time_between(
-                rdv_prec.lieu,
-                lieu,
-                heure_depart=rdv_prec.fin + timedelta(minutes=5),
-            )
-            temps_trajet_retour_s, _ = driving_time_between(
-                lieu,
-                rdv_suiv.lieu,
-                heure_arrivee=rdv_suiv.debut - timedelta(minutes=5),
-            )
+            temps_trajet_aller_s, _ = results[("aller", jour, idx)]
+            temps_trajet_retour_s, _ = results[("retour", jour, idx)]
             # 10% en plus sur les temps de trajet
             temps_trajet_aller_s = temps_trajet_aller_s * 1.10
             temps_trajet_retour_s = temps_trajet_retour_s * 1.10
