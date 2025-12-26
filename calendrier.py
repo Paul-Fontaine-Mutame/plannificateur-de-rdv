@@ -4,6 +4,7 @@ from datetime import datetime, timedelta
 from itertools import pairwise
 
 import requests
+import streamlit as st
 from ics import Calendar
 
 from mapbox import driving_time_between, geocode, suggestions
@@ -213,8 +214,14 @@ class Calendrier:
         for i, (jour, date_jour, rdv_prec, rdv_suiv) in enumerate(meta):
             creu_s = int((rdv_suiv.debut - rdv_prec.fin).total_seconds())
 
-            temps_trajet_aller_s, _ = results[("aller", i)]
-            temps_trajet_retour_s, _ = results[("retour", i)]
+            temps_trajet_aller_s, dist = results[("aller", i)]
+            if not temps_trajet_aller_s:  # An error occurred -> display the message
+                st.warning(dist)
+                continue
+            temps_trajet_retour_s, dist = results[("retour", i)]
+            if not temps_trajet_retour_s:
+                st.warning(dist)
+                continue
             # 10% en plus sur les temps de trajet
             temps_trajet_aller_s = temps_trajet_aller_s * 1.10
             temps_trajet_retour_s = temps_trajet_retour_s * 1.10

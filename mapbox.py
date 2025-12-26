@@ -181,16 +181,9 @@ def driving_time_between(lieu1, lieu2, heure_depart=None, heure_arrivee=None):
         _set_cache(key, [duration, distance])
         return duration, distance
     except Exception as e:
-        print(f"Error while fetching driving time between {lieu1} and {lieu2} :\n {e}")
-        return 0, 0
-
-
-def map_with_places(lieu_list):
-    lonlats = ";".join(
-        f"{round(lieu.lon, 6)},{round(lieu.lat, 6)}" for lieu in lieu_list
-    )
-    url = f"https://api.mapbox.com/styles/v1/mapbox/streets-v11/static/pin-s+ff0000({lonlats})/{lonlats}/auto/500x300@2x?access_token={API_KEY}"
-    return url
+        msg = f"Error while fetching driving time between {lieu1} and {lieu2} :\n {e}"
+        print(msg)
+        return False, msg
 
 
 if __name__ == "__main__":
