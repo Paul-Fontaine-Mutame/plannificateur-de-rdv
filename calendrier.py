@@ -36,9 +36,6 @@ class Lieu:
     ):
         if nom is not None:
             if "teams" in nom.lower():
-                print(
-                    f"Lieu '{nom}' détecté, remplacé par lieu par défaut (siège St Lô)."
-                )
                 nom = None
 
         if nom is None:
@@ -181,16 +178,18 @@ class Calendrier:
 
         tasks = {}  # key -> future
         meta = []  # list of (jour, rdv_prec, rdv_suiv) so we can compute later
+        i = 0
 
         for jour in range(5):
             date_jour = debut_semaine + timedelta(days=jour)
             rdvs_jour = self.rdvs_de_la_journee(date_jour)
 
-            for idx, (rdv_prec, rdv_suiv) in enumerate(pairwise(rdvs_jour)):
+            for rdv_prec, rdv_suiv in pairwise(rdvs_jour):
                 meta.append((jour, date_jour, rdv_prec, rdv_suiv))
 
-                k1 = ("aller", jour, idx)
-                k2 = ("retour", jour, idx)
+                k1 = ("aller", i)
+                k2 = ("retour", i)
+                i += 1
 
                 tasks[k1] = _EXEC.submit(
                     driving_time_between,
@@ -208,19 +207,11 @@ class Calendrier:
                 )
         results = {k: fut.result() for k, fut in tasks.items()}
 
-        for idx, (jour, date_jour, rdv_prec, rdv_suiv) in enumerate(meta):
+        for i, (jour, date_jour, rdv_prec, rdv_suiv) in enumerate(meta):
             creu_s = int((rdv_suiv.debut - rdv_prec.fin).total_seconds())
 
-            temps_trajet_aller_s, _ = driving_time_between(
-                rdv_prec.lieu,
-                lieu,
-                heure_depart=rdv_prec.fin + timedelta(minutes=5),
-            )
-            temps_trajet_retour_s, _ = driving_time_between(
-                lieu,
-                rdv_suiv.lieu,
-                heure_arrivee=rdv_suiv.debut - timedelta(minutes=5),
-            )
+            temps_trajet_aller_s, _ = results[("aller", i)]
+            temps_trajet_retour_s, _ = results[("retour", i)]
             # 10% en plus sur les temps de trajet
             temps_trajet_aller_s = temps_trajet_aller_s * 1.10
             temps_trajet_retour_s = temps_trajet_retour_s * 1.10
