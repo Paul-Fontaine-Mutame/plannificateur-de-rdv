@@ -158,6 +158,9 @@ class Calendrier:
             lieu = Lieu(event.location) if event.location else Lieu()
             debut = event.begin.datetime.replace(tzinfo=None)
             duree = int(event.duration.total_seconds())
+            if event.all_day:
+                debut = debut + timedelta(seconds=self.debut_journee)
+                duree = self.fin_journee - self.debut_journee
 
             rdv = Rdv(titre, lieu, debut, duree)
             self.rendez_vous.append(rdv)
